@@ -187,9 +187,13 @@ def extract_order_details(driver, site_info, profile_name):
 
         # 배송번호
         try:
-            delivery_number = WebDriverWait(driver, 10).until( # Increased timeout to 10 seconds
+            delivery_number_element = WebDriverWait(driver, 10).until( # Increased timeout to 10 seconds
                 EC.presence_of_element_located((By.CSS_SELECTOR, site_info["delivery_number_selector"]))
-            ).text
+            )
+            delivery_number_text = delivery_number_element.text
+            delivery_number = delivery_number_text.replace("[", "").replace("]", "") # Remove square brackets
+            # delivery_number = delivery_number_text[1:-1] # Alternative using string slicing (less robust if brackets are missing)
+
         except:
             delivery_number = "정보 없음"
 
@@ -219,6 +223,7 @@ def extract_order_details(driver, site_info, profile_name):
         print(f"👤 [{profile_name}] 아이디: {user_id}") # 아이디 정보 추가 및 프로필 이름 추가
         print(f"🚚 [{profile_name}] 배송사: {delivery_company}")
         print(f"📦 [{profile_name}] 배송정보: {delivery_info}")
+        print(f"🔢 [{profile_name}] 배송번호: {delivery_number}") # 배송번호 추가 출력
         print(f"👤 [{profile_name}] 받는 사람: {recipient_name}")
 
         # 🚩 수집된 정보를 딕셔너리 형태로 반환
@@ -227,6 +232,7 @@ def extract_order_details(driver, site_info, profile_name):
             "아이디": user_id,
             "배송사": delivery_company,
             "배송정보": delivery_info,
+            "배송번호": delivery_number, # 배송번호 추가
             "받는 사람": recipient_name
         }
 
