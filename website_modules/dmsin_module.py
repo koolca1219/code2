@@ -4,6 +4,9 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import time
 from datetime import datetime, timedelta
+import re
+
+
 
 def set_headless_option(options):
     """ChromeOptions에 헤드리스 모드 설정 추가"""
@@ -20,7 +23,7 @@ def login(driver, site_info, profile_name):
 
         # 알림창 처리 (로그인 페이지 접속 직후)
         try:
-            alert = WebDriverWait(driver, 5).until(EC.alert_is_present())
+            alert = WebDriverWait(driver, 10).until(EC.alert_is_present()) # Increased timeout to 10 seconds
             if alert:
                 alert_text = alert.text
                 print(f"[{profile_name}] ⛔ 알림창 감지: {alert_text}")
@@ -37,7 +40,7 @@ def login(driver, site_info, profile_name):
 
         # 로그아웃 먼저 시도
         try:
-            logout_button = WebDriverWait(driver, 3).until(
+            logout_button = WebDriverWait(driver, 10).until( # Increased timeout to 10 seconds
                 EC.element_to_be_clickable((By.CSS_SELECTOR, "#header > div.part_01 > div > ul.JS_topMenu.menuOver > li:nth-child(1) > a"))
             )
             logout_button.click()
@@ -47,19 +50,19 @@ def login(driver, site_info, profile_name):
             print(f"[{profile_name}] 이미 로그아웃 상태이거나 로그아웃 버튼을 찾을 수 없음.")
 
         # ID 입력
-        id_input = WebDriverWait(driver, 1).until(
+        id_input = WebDriverWait(driver, 10).until( # Increased timeout to 10 seconds
             EC.presence_of_element_located((By.CSS_SELECTOR, site_info["id_selector"]))
         )
         id_input.send_keys(site_info["id"])
 
         # PW 입력
-        pw_input = WebDriverWait(driver, 1).until(
+        pw_input = WebDriverWait(driver, 10).until( # Increased timeout to 10 seconds
             EC.presence_of_element_located((By.CSS_SELECTOR, site_info["pw_selector"]))
         )
         pw_input.send_keys(site_info["pw"])
 
         # 로그인 버튼 클릭
-        login_button = WebDriverWait(driver, 1).until(
+        login_button = WebDriverWait(driver, 10).until( # Increased timeout to 10 seconds
             EC.element_to_be_clickable((By.CSS_SELECTOR, site_info["login_button_selector"]))
         )
         login_button.click()
@@ -79,7 +82,7 @@ def logout(driver, site_info, profile_name):
     try:
         print(f"\n[{profile_name}] 🚪 도매신 로그아웃 시도...")
         # 로그아웃 버튼 클릭
-        logout_button = WebDriverWait(driver, 3).until(
+        logout_button = WebDriverWait(driver, 10).until( # Increased timeout to 10 seconds
             EC.element_to_be_clickable((By.CSS_SELECTOR, "#header > div.part_01 > div > ul.JS_topMenu.menuOver > li:nth-child(1) > a"))
         )
         logout_button.click()
@@ -100,17 +103,28 @@ def navigate_to_order_details(driver, site_info, profile_name, collected_data):
 
         print(f"✅ [{profile_name}] 도매신 주문배송조회 페이지 이동 완료!")
 
-        # 주문번호 목록 가져오기
-        order_numbers = driver.find_elements(By.CSS_SELECTOR,
-            "#contents > div.xans-element-.xans-myshop.xans-myshop-orderhistorylistitem > div > div")
+        # 주문번호 목록 가져오기 (수정된 셀렉터 유지)
+        order_elements = driver.find_elements(By.CSS_SELECTOR,
+            "#contents > div.xans-element-.xans-myshop.xans-myshop-orderhistorylistitem > div > div h3 span.number > a")
 
-        if not order_numbers:
+        if not order_elements:
             print(f"[{profile_name}] ⚠️ 도매신 주문번호를 찾을 수 없음!")
             return False
 
-        print(f"\n✅ [{profile_name}] 도매신 수집된 주문번호 목록:")
-        for idx, order in enumerate(order_numbers, 1):
-            print(f"[{profile_name}] {idx}. {order.text}")
+        print(f"\n✅ [{profile_name}] 도매신 수집된 주문번호 목록 (숫자8-숫자7 형식):")
+        for idx, order_element in enumerate(order_elements, 1): # Changed variable name to order_element
+            # href 속성에서 order_id 값 추출
+            order_number_full_link = order_element.get_attribute("href")
+            order_number_candidate = order_number_full_link.split("order_id=")[-1].split("&")[0] # URL 파라미터 추출 및 & 기준으로 분리
+
+            # 정규 표현식으로 숫자8-숫자7 형식 검사
+            if re.match(r"^\d{8}-\d{7}$", order_number_candidate):
+                order_number = order_number_candidate
+                print(f"[{profile_name}] {idx}. {order_number}")
+            else:
+                # 숫자8-숫자7 형식이 아니면 출력하지 않음 (삭제)
+                # 필요하다면 로그를 남기거나, 다른 처리를 할 수 있습니다.
+                print(f"[{profile_name}] {idx}. ⚠️ 주문번호 형식 불일치: {order_number_candidate} (삭제됨)")
 
         # 오늘 날짜와 3일 전 날짜 계산
         today = datetime.today()
@@ -124,13 +138,14 @@ def navigate_to_order_details(driver, site_info, profile_name, collected_data):
         print(f"\n🔎 [{profile_name}] 도매신 최근 2일({recent_days}) 주문번호만 수집합니다.")
 
         # 모든 주문번호에 대해 상세 페이지로 이동하여 정보 수집 (최근 3일 주문만)
-        for idx in range(len(order_numbers)):
-            order_number_text = order_numbers[idx].text
+        for idx in range(len(order_elements)): # Use order_elements here
+            order_element = order_elements[idx] # Get the element for clicking
+            order_number_text = order_element.text # Get text from the element
             order_date_prefix = order_number_text[:8] # 주문번호 앞 8자리가 날짜 (YYYYMMDD)
 
             if order_date_prefix in recent_days:
                 print(f"\n🔗 [{profile_name}] 도매신 {order_number_text} (최근 2일 주문) 클릭하여 상세 페이지로 이동...")
-                order_numbers[idx].click()
+                order_element.click() # Click the element, not the old list
                 time.sleep(3)  # 이동 후 대기
 
                 print(f"✅ [{profile_name}] 도매신 주문 상세 페이지 이동 완료!")
@@ -145,10 +160,10 @@ def navigate_to_order_details(driver, site_info, profile_name, collected_data):
                 driver.back()
                 time.sleep(3)  # 목록 페이지 로딩 대기
 
-                # 뒤로 간 후 새로 주문번호 목록을 찾아 다시 클릭할 수 있도록 요소 갱신
-                order_numbers = WebDriverWait(driver, 1).until(
+                # 뒤로 간 후 새로 주문번호 목록을 찾아 다시 클릭할 수 있도록 요소 갱신 (Corrected selector here)
+                order_elements = WebDriverWait(driver, 10).until( # Increased timeout to 10 seconds and corrected selector
                     EC.presence_of_all_elements_located((By.CSS_SELECTOR,
-                        "#contents > div.xans-element-.xans-myshop.xans-myshop-orderhistorylistitem > div > div"))
+                        "#contents > div.xans-element-.xans-myshop.xans-myshop-orderhistorylistitem > div > div h3 span.number > a")) # Corrected selector
                 )
                 print(f"⚡ [{profile_name}] 도매신 새로운 주문번호 목록 갱신 완료!")
             else:
@@ -172,7 +187,7 @@ def extract_order_details(driver, site_info, profile_name):
 
         # 배송번호
         try:
-            delivery_number = WebDriverWait(driver, 1).until(
+            delivery_number = WebDriverWait(driver, 10).until( # Increased timeout to 10 seconds
                 EC.presence_of_element_located((By.CSS_SELECTOR, site_info["delivery_number_selector"]))
             ).text
         except:
@@ -180,7 +195,7 @@ def extract_order_details(driver, site_info, profile_name):
 
         # 배송사와 배송정보 분리
         try:
-            delivery_company_info = WebDriverWait(driver, 1).until(
+            delivery_company_info = WebDriverWait(driver, 10).until( # Increased timeout to 10 seconds
                 EC.presence_of_element_located((By.CSS_SELECTOR, site_info["delivery_company_selector"]))
             ).text
             # 배송사와 배송정보 분리 (한진택배 458579242553에서 한진택배만 추출)
@@ -192,7 +207,7 @@ def extract_order_details(driver, site_info, profile_name):
 
         # 받는 사람 이름에서 '님'과 불필요한 정보를 제거
         try:
-            recipient_name = WebDriverWait(driver, 1).until(
+            recipient_name = WebDriverWait(driver, 10).until( # Increased timeout to 10 seconds
                 EC.presence_of_element_located((By.CSS_SELECTOR, site_info["name_selector"]))
             ).text
             recipient_name = recipient_name.replace("님에게", "")  # "님" 제거

@@ -6,7 +6,7 @@
     "pw": "sjhs12jh19!@!(^^",
     "id_selector": "#member_id",
     "pw_selector": "#member_passwd",
-    "login_button_selector": "#member_form_7414134710 > div > div > fieldset > div.login_form.member > a",  
+    "login_button_selector": ".login_form.member > a",
     "order_numA_selector": "#contents > div.xans-element-.xans-myshop.xans-myshop-orderhistorylistitem > div > div:nth-child(1) > h3 > span.number > a",
     "order_numB_selector": "#detailForm > div > div:nth-child(1) > div.contents > div > table > tbody > tr:nth-child(1) > td",
     "order_open_selector": "#contents > div.xans-element-.xans-myshop.xans-myshop-orderhistorylistitem > div > div:nth-child(1) > h3 > span.number > a",
