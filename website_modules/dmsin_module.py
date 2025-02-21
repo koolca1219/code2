@@ -14,10 +14,10 @@ def set_headless_option(options):
 
 
 def login(driver, site_info, profile_name):
-    """도매직방 로그인 수행 (프로필 이름 추가)"""
+    """도매신 로그인 수행 (프로필 이름 추가)"""
     try:
         driver.get(site_info["login_url"])
-        print(f"[{profile_name}] 도매직방 로그인 페이지 이동: {site_info['login_url']}")
+        print(f"[{profile_name}] 도매신 로그인 페이지 이동: {site_info['login_url']}")
 
         # 알림창 처리 (로그인 페이지 접속 직후)
         try:
@@ -39,7 +39,7 @@ def login(driver, site_info, profile_name):
         # 로그아웃 먼저 시도
         try:
             logout_button = WebDriverWait(driver, 3).until(
-                EC.element_to_be_clickable((By.CSS_SELECTOR, "#top.header > div.navi > div > div > ul:nth-child(3) > li:nth-child(1) > a"))
+                EC.element_to_be_clickable((By.CSS_SELECTOR, "#header > div.part_01 > div > ul.JS_topMenu.menuOver > li:nth-child(1) > a"))
             )
             logout_button.click()
             print(f"[{profile_name}] 로그아웃 성공: {site_info['site_name']}")
@@ -48,118 +48,109 @@ def login(driver, site_info, profile_name):
             print(f"[{profile_name}] 이미 로그아웃 상태이거나 로그아웃 버튼을 찾을 수 없음.")
 
         # ID 입력
-        id_input = WebDriverWait(driver, 1).until(
-            EC.presence_of_element_located((By.CSS_SELECTOR, site_info["id_selector"]))
+        id_input = WebDriverWait(driver, 10).until(  # Wait up to 10 seconds
+            EC.presence_of_element_located((By.CSS_SELECTOR, "#member_id"))
         )
         id_input.clear()  # 🚩 기존 데이터 삭제 코드 추가
         id_input.send_keys(site_info["id"])
 
         # PW 입력
-        pw_input = WebDriverWait(driver, 1).until(
-            EC.presence_of_element_located((By.CSS_SELECTOR, site_info["pw_selector"]))
+        pw_input = WebDriverWait(driver, 10).until(  # Wait up to 10 seconds
+            EC.presence_of_element_located((By.CSS_SELECTOR, "#member_passwd"))
         )
         pw_input.send_keys(site_info["pw"])
 
         # 로그인 버튼 클릭
-        login_button = WebDriverWait(driver, 1).until(
-            EC.element_to_be_clickable((By.CSS_SELECTOR, site_info["login_button_selector"]))
+        login_button = WebDriverWait(driver, 10).until(  # Wait up to 10 seconds
+            EC.element_to_be_clickable((By.CSS_SELECTOR, "a.-btn.-block.-xl.-black"))
         )
         login_button.click()
 
         time.sleep(3)  # 로그인 후 페이지 로딩 대기
 
-        print(f"✅ [{profile_name}] 도매직방 로그인 성공!")
+        print(f"✅ [{profile_name}] 도매신 로그인 성공!")
         return True
 
     except Exception as e:
-        print(f"❌ [{profile_name}] 도매직방 로그인 중 오류 발생: {e}")
+        print(f"❌ [{profile_name}] 도매신 로그인 중 오류 발생: {e}")
         return False
 
 
 def logout(driver, site_info, profile_name):
-    """도매직방 로그아웃 수행 (프로필 이름 추가)"""
+    """도매신 로그아웃 수행 (프로필 이름 추가)"""
     try:
-        print(f"\n[{profile_name}] 🚪 도매직방 로그아웃 시도...")
+        print(f"\n[{profile_name}] 🚪 도매신 로그아웃 시도...")
         # 로그아웃 버튼 클릭
         logout_button = WebDriverWait(driver, 3).until(
-            EC.element_to_be_clickable((By.CSS_SELECTOR, "#top.header > div.navi > div > div > ul:nth-child(3) > li:nth-child(1) > a"))
+            EC.element_to_be_clickable((By.CSS_SELECTOR, "#header > div.part_01 > div > ul.JS_topMenu.menuOver > li:nth-child(1) > a"))
         )
         logout_button.click()
         time.sleep(2)  # 로그아웃 후 대기
-        print(f"✅ [{profile_name}] 도매직방 로그아웃 성공!")
+        print(f"✅ [{profile_name}] 도매신 로그아웃 성공!")
         return True
     except Exception as e:
-        print(f"❌ [{profile_name}] 도매직방 로그아웃 중 오류 발생: {e}")
+        print(f"❌ [{profile_name}] 도매신 로그아웃 중 오류 발생: {e}")
         return False
 def navigate_to_order_details(driver, site_info, profile_name, collected_data):
-    """도매직방 주문배송조회 페이지 이동 → 주문번호 목록에서 정보 수집 (상세 페이지 X) (프로필 이름 추가)"""
+    """도매신 주문배송조회 페이지 이동 → 주문번호 목록에서 정보 수집 (상세 페이지 X) (프로필 이름 추가)"""
     try:
-        print(f"\n[{profile_name}] 도매직방 주문배송조회 페이지 이동...")
-        driver.get("https://www.dzb.co.kr/mypage/order_list.php")  # ✅ 수정된 주문배송조회 페이지 URL
+        print(f"\n[{profile_name}] 도매신 주문배송조회 페이지 이동...")
+        driver.get("https://domesin.co.kr/myshop/order/list.html")  # ✅ 수정된 주문배송조회 페이지 URL
         time.sleep(3)  # 페이지 로딩 대기
 
-        print(f"✅ [{profile_name}] 도매직방 주문배송조회 페이지 이동 완료!")
+        print(f"✅ [{profile_name}] 도매신 주문배송조회 페이지 이동 완료!")
 
         # 주문 목록 테이블의 각 행(주문) 가져오기
         order_rows = driver.find_elements(By.CSS_SELECTOR,
-            "#content > div > div.contents-inner.mypage > div.section-body > div.mypage_table_type > table > tbody > tr") # ⚠️ 주문 목록 테이블 행 CSS selector (수정 필요할 수 있음)
+           "#contents > div.xans-element-.xans-myshop.xans-myshop-orderhistorylistitem > div > div.ec-base-table.typeList > table > tbody > tr") # ⚠️ 주문 목록 테이블 행 CSS selector (수정 필요할 수 있음)
 
-        if not order_rows:
-            print(f"[{profile_name}] ⚠️ 도매직방 주문 목록을 찾을 수 없음!")
+
+        if not order_rows or "검색된 내역이 없습니다" in driver.page_source:
+            print(f"[{profile_name}] ⚠️ 도매신 주문 목록을 찾을 수 없음!")
             return False
 
-        print(f"\n✅ [{profile_name}] 도매직방 주문 목록에서 정보 수집 시작:")
+        print(f"\n✅ [{profile_name}] 도매신 주문 목록에서 정보 수집 시작:")
 
         # 오늘 날짜와 2일 전 날짜 계산 (최근 2일 주문 필터링 로직) ⚠️ 2일 전으로 수정
         today = datetime.today()
         yesterday = today - timedelta(days=1)
-        today_str = today.strftime("%y%m%d")
-        yesterday_str = yesterday.strftime("%y%m%d")
+        today_str = today.strftime("%Y-%m-%d")  # YYYY-MM-DD 형식으로 변경
+        yesterday_str = yesterday.strftime("%Y-%m-%d")  # YYYY-MM-DD 형식으로 변경
 
         recent_days = [today_str, yesterday_str]
-        print(f"\n🔎 [{profile_name}] 도매직방 최근 2일({recent_days}) 주문번호만 수집합니다.")
+        print(f"\n🔎 [{profile_name}] 도매신 최근 2일({recent_days}) 주문번호만 수집합니다.")
 
         # 주문 목록 순회하며 정보 추출
         for row in order_rows:
             try:
-                order_number_element = row.find_element(By.CSS_SELECTOR, "td.order_day_num > a > span")
-                order_number_text = order_number_element.text
-                order_date_prefix = order_number_text[:6]  # 주문번호 앞 6자리가 날짜 (YYMMDD)
+                # 주문번호 추출 (CSS Selector 수정)
+                order_number_element = row.find_element(By.CSS_SELECTOR, "td:nth-child(1) > div > span.number > a")
+                order_number_text = order_number_element.text.strip()
+                order_date_prefix = order_number_text[:10]  # 주문번호 앞 10자리가 날짜 (YYYY-MM-DD)
 
                 if order_date_prefix in recent_days:  # 최근 2일 주문 필터링
                     print(f"\n📦 [{profile_name}] 주문번호: {order_number_text} 정보 수집...")
+                    order_detail_url = order_number_element.get_attribute("href")  # 주문 상세 페이지 URL 추출
+                    driver.get(order_detail_url)
+                    time.sleep(2)
 
-                    # 각 컬럼별 데이터 추출 (CSS selector 수정 필요)
-                    delivery_info_element = row.find_element(By.CSS_SELECTOR, "td:nth-child(2)")  # 배송정보
-                    delivery_info_combined = delivery_info_element.text.strip()
-
-                    recipient_name_element = row.find_element(By.CSS_SELECTOR, "td:nth-child(2)")  # 받는 사람
+                    # 받는 사람 이름 추출 (CSS Selector 수정)
+                    recipient_name_element = driver.find_element(By.CSS_SELECTOR, "#contents > div > div.ec-base-fold.theme1.selected.eToggle > div.contents > div > table > tbody > tr:nth-child(2) > td")
                     recipient_name = recipient_name_element.text.strip()
 
-                    delivery_company = "CJ택배"  # 배송사 CJ택배로 고정
+                    # 배송 정보 추출 (CSS Selector 수정)
+                    delivery_info_element = driver.find_element(By.CSS_SELECTOR, "#contents > div > div.ec-base-fold.theme1.selected.eToggle > div.contents > div > table > tbody > tr:nth-child(5) > td")
+                    delivery_info_combined = delivery_info_element.text.strip()
+
+                    delivery_company = "정보 없음"  # 기본값
                     delivery_number = "정보 없음"  # 기본값
-
-                    # 배송정보에서 송장번호 추출 (10자리 이상 숫자)
-                    #match = re.search(r'\d{10,}', delivery_info_combined)
-                    #if match:
-                     #   delivery_number = match.group(0)
-                      #  print(f"✅ [{profile_name}] 송장번호 추출 성공: {delivery_number}")
-                    #else:
-                     #   print(f"⚠️ [{profile_name}] 송장번호 추출 실패: {delivery_info_combined}")
-
-
-
-                    # 숫자와 문자를 분리하는 정규식 적용
-                    match = re.search(r'(\D+)(\d+)', delivery_info_combined)  # 문자+숫자 그룹 찾기
-                    if match:
-                        recipient_name = match.group(1).strip()  # 문자(이름) 부분만 추출
-                        delivery_number = match.group(2).strip()  # 숫자(송장번호) 부분만 추출
+                    parts = delivery_info_combined.split("I")
+                    if len(parts) == 2:
+                        delivery_company = parts[0].strip()
+                        delivery_number = parts[1].strip()
+                        print(f"✅ [{profile_name}] 택배사: {delivery_company}, 송장번호: {delivery_number}")
                     else:
-                        recipient_name = delivery_info_combined  # 이름만 있을 경우
-                        delivery_number = "정보 없음"
-
-                    
-
+                        print(f"⚠️ [{profile_name}] 택배사/송장번호 추출 실패: {delivery_info_combined}")
 
                     # 수집된 정보 딕셔너리에 저장
                     order_detail = {
@@ -172,6 +163,7 @@ def navigate_to_order_details(driver, site_info, profile_name, collected_data):
                     }
                     collected_data.append(order_detail)
                     print(f"✅ [{profile_name}] 주문번호: {order_number_text} 정보 수집 완료")
+
                 else:
                     print(f"\n🚫 [{profile_name}] {order_number_text} (오래된 주문)는 최근 2일 주문이 아니므로 건너뜁니다.")
 
@@ -182,7 +174,7 @@ def navigate_to_order_details(driver, site_info, profile_name, collected_data):
         return True
 
     except Exception as e:
-        print(f"❌ [{profile_name}] 도매직방 주문 배송 조회 페이지 작업 중 오류 발생: {e}")
+        print(f"❌ [{profile_name}] 도매신 주문 배송 조회 페이지 작업 중 오류 발생: {e}")
         return False
 
 def set_headless_option(options):

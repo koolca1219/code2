@@ -1,11 +1,17 @@
 [
-  {
-    "site_name": "dmjb",
-    "login_url": "https://www.dzb.co.kr/member/login.php",
-    "id": "koolca121922",
+{
+    "site_name": "dmsin",
+    "login_url": "https://domesin.co.kr/member/login.html",
+    "id": "koolca121933",
     "pw": "sjhs12jh19!@!(^^",
-    "id_selector": "#loginId",
-    "pw_selector": "#loginPwd",
-    "login_button_selector": "#formLogin > div.login > button"   
+    "id_selector": "#member_id",
+    "pw_selector": "#member_passwd",
+    "login_button_selector": "#member_form_1470071138 > div > div > fieldset > div.login_form.member > a",  
+    "order_numA_selector": "#contents > div.xans-element-.xans-myshop.xans-myshop-orderhistorylistitem > div > div:nth-child(1) > h3 > span.number > a",
+    "order_numB_selector": "#detailForm > div > div:nth-child(1) > div.contents > div > table > tbody > tr:nth-child(1) > td",
+    "order_open_selector": "#contents > div.xans-element-.xans-myshop.xans-myshop-orderhistorylistitem > div > div:nth-child(1) > h3 > span.number > a",
+    "delivery_number_selector": "#detailForm > div > div:nth-child(2) > div.contents > div:nth-child(1) > div.xans-element-.xans-myshop.xans-myshop-orderhistorydetailbasic > div > div.prdBox > div.description > ul > li:nth-child(2) > a",
+    "delivery_company_selector": "#detailForm > div > div:nth-child(2) > div.contents > div:nth-child(1) > div.xans-element-.xans-myshop.xans-myshop-orderhistorydetailbasic > div > div.prdBox > div.description > ul > li:nth-child(1) > a",
+    "name_selector": "#detailForm > div > div:nth-child(7) > div.contents > div.ec-base-table > table > tbody > tr:nth-child(2) > td > span"
   }
 ]
