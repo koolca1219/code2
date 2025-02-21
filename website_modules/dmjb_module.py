@@ -5,7 +5,6 @@ from selenium.webdriver.support import expected_conditions as EC
 import time
 import re
 from datetime import datetime, timedelta
-from selenium.common.exceptions import NoAlertPresentException, TimeoutException
 
 def set_headless_option(options):
     """ChromeOptions에 헤드리스 모드 설정 추가"""
@@ -16,46 +15,37 @@ def set_headless_option(options):
 
 def login(driver, site_info, profile_name):
     """도매직방 로그인 수행 (프로필 이름 추가)"""
-    
     try:
         driver.get(site_info["login_url"])
-        
+        print(f"[{profile_name}] 도매직방 로그인 페이지 이동: {site_info['login_url']}")
+
         # 알림창 처리 (로그인 페이지 접속 직후)
         try:
-            alert = WebDriverWait(driver, 1).until(EC.alert_is_present()) # Increased timeout to 10 seconds
+            alert = WebDriverWait(driver, 5).until(EC.alert_is_present())
             if alert:
+                alert_text = alert.text
+                print(f"[{profile_name}] ⛔ 알림창 감지: {alert_text}")
                 try:
                     alert.dismiss()
+                    print(f"[{profile_name}] ✅ 알림창 dismiss() 완료 (취소)")
                 except:
-                    try:  # 🚩 accept 시도 추가
-                        alert.accept()
-                    except NoAlertPresentException:
-                        pass
-                    except Exception: # accept 실패 시 강제 종료 시도
-                        try:
-                            driver.switch_to.alert.dismiss() # 🚩 강제 종료 시도
-                        except NoAlertPresentException: # 알림창이 이미 없어진 경우
-                            pass
+                    print(f"[{profile_name}] ⛔ dismiss() 실패, accept() 시도")
+                    alert.accept()
+                    print(f"[{profile_name}] ✅ 알림창 accept() 완료 (확인)")
                 time.sleep(1)
-        except TimeoutException: # 🚩 TimeoutException 처리 (알림창이 10초 안에 안 나타난 경우)
-            pass
-        except NoAlertPresentException: # 🚩 NoAlertPresentException 처리 (알림창이 없는 경우)
-            pass
+        except:
+            print(f"[{profile_name}] 알림창 감지 안됨 (정상)")
 
-
-        
-        # 로그아웃 시도 (로그아웃 버튼 존재 여부 확인)
+        # 로그아웃 먼저 시도
         try:
-            logout_button = WebDriverWait(driver, 1).until(
+            logout_button = WebDriverWait(driver, 3).until(
                 EC.element_to_be_clickable((By.CSS_SELECTOR, "#top.header > div.navi > div > div > ul:nth-child(3) > li:nth-child(1) > a"))
             )
-            if "로그아웃" in logout_button.text:  # 🚩 로그아웃 버튼 텍스트 확인
-                logout_button.click()
-                time.sleep(2)  # 로그아웃 후 대기
+            logout_button.click()
+            print(f"[{profile_name}] 로그아웃 성공: {site_info['site_name']}")
+            time.sleep(2)  # 로그아웃 후 대기
         except:
-            pass  # 로그아웃 버튼을 찾을 수 없으면 아무것도 하지 않음.
-
-        
+            print(f"[{profile_name}] 이미 로그아웃 상태이거나 로그아웃 버튼을 찾을 수 없음.")
 
         # ID 입력
         id_input = WebDriverWait(driver, 1).until(
@@ -86,7 +76,21 @@ def login(driver, site_info, profile_name):
         return False
 
 
-
+def logout(driver, site_info, profile_name):
+    """도매직방 로그아웃 수행 (프로필 이름 추가)"""
+    try:
+        print(f"\n[{profile_name}] 🚪 도매직방 로그아웃 시도...")
+        # 로그아웃 버튼 클릭
+        logout_button = WebDriverWait(driver, 3).until(
+            EC.element_to_be_clickable((By.CSS_SELECTOR, "#top.header > div.navi > div > div > ul:nth-child(3) > li:nth-child(1) > a"))
+        )
+        logout_button.click()
+        time.sleep(2)  # 로그아웃 후 대기
+        print(f"✅ [{profile_name}] 도매직방 로그아웃 성공!")
+        return True
+    except Exception as e:
+        print(f"❌ [{profile_name}] 도매직방 로그아웃 중 오류 발생: {e}")
+        return False
 
 
 
@@ -183,29 +187,6 @@ def navigate_to_order_details(driver, site_info, profile_name, collected_data):
     except Exception as e:
         print(f"❌ [{profile_name}] 도매직방 주문 배송 조회 페이지 작업 중 오류 발생: {e}")
         return False
-
-def logout(driver, site_info, profile_name):
-    """도매직방 로그아웃 수행 (프로필 이름 추가)"""
-    try:
-        print(f"\n[{profile_name}] 🚪 도매직방 로그아웃 시도...")
-        # 로그아웃 버튼 클릭
-        logout_button = WebDriverWait(driver, 1).until(
-                EC.element_to_be_clickable((By.CSS_SELECTOR, "#top.header > div.navi > div > div > ul:nth-child(3) > li:nth-child(1) > a"))
-            )
-        if "로그아웃" in logout_button.text:  # 🚩 로그아웃 버튼 텍스트 확인
-                logout_button.click()
-                time.sleep(2)  # 로그아웃 후 대기
-        
-        
-        print(f"✅ [{profile_name}] 도매직방 로그아웃 성공!")
-        return True
-    except Exception as e:
-        print(f"❌ [{profile_name}] 도매직방 로그아웃 중 오류 발생: {e}")
-        return False
-
-
-
-
 
 def set_headless_option(options):
     """ChromeOptions에 헤드리스 모드 설정 추가"""

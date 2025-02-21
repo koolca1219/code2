@@ -3,8 +3,10 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import time
-from datetime import datetime, timedelta
 import re
+from datetime import datetime, timedelta
+from selenium.common.exceptions import NoAlertPresentException, TimeoutException
+
 
 
 
@@ -19,25 +21,32 @@ def login(driver, site_info, profile_name):
     """도매신 로그인 수행 (프로필 이름 추가)"""
     try:
         driver.get(site_info["login_url"])
-        print(f"[{profile_name}] 도매신 로그인 페이지 이동: {site_info['login_url']}")
+        
 
         # 알림창 처리 (로그인 페이지 접속 직후)
         try:
-            alert = WebDriverWait(driver, 10).until(EC.alert_is_present()) # Increased timeout to 10 seconds
+            alert = WebDriverWait(driver, 1).until(EC.alert_is_present()) # Increased timeout to 10 seconds
             if alert:
-                alert_text = alert.text
-                print(f"[{profile_name}] ⛔ 알림창 감지: {alert_text}")
                 try:
                     alert.dismiss()
-                    print(f"[{profile_name}] ✅ 알림창 dismiss() 완료 (취소)")
                 except:
-                    print(f"[{profile_name}] ⛔ dismiss() 실패, accept() 시도")
-                    alert.accept()
-                    print(f"[{profile_name}] ✅ 알림창 accept() 완료 (확인)")
+                    try:  # 🚩 accept 시도 추가
+                        alert.accept()
+                    except NoAlertPresentException:
+                        pass
+                    except Exception: # accept 실패 시 강제 종료 시도
+                        try:
+                            driver.switch_to.alert.dismiss() # 🚩 강제 종료 시도
+                        except NoAlertPresentException: # 알림창이 이미 없어진 경우
+                            pass
                 time.sleep(1)
-        except:
-            print(f"[{profile_name}] 알림창 감지 안됨 (정상)")
+        except TimeoutException: # 🚩 TimeoutException 처리 (알림창이 10초 안에 안 나타난 경우)
+            pass
+        except NoAlertPresentException: # 🚩 NoAlertPresentException 처리 (알림창이 없는 경우)
+            pass
 
+
+        
         # 로그아웃 먼저 시도
         try:
             logout_button = WebDriverWait(driver, 10).until( # Increased timeout to 10 seconds
@@ -50,19 +59,19 @@ def login(driver, site_info, profile_name):
             print(f"[{profile_name}] 이미 로그아웃 상태이거나 로그아웃 버튼을 찾을 수 없음.")
 
         # ID 입력
-        id_input = WebDriverWait(driver, 10).until( # Increased timeout to 10 seconds
+        id_input = WebDriverWait(driver, 1).until( # Increased timeout to 10 seconds
             EC.presence_of_element_located((By.CSS_SELECTOR, site_info["id_selector"]))
         )
         id_input.send_keys(site_info["id"])
 
         # PW 입력
-        pw_input = WebDriverWait(driver, 10).until( # Increased timeout to 10 seconds
+        pw_input = WebDriverWait(driver, 1).until( # Increased timeout to 10 seconds
             EC.presence_of_element_located((By.CSS_SELECTOR, site_info["pw_selector"]))
         )
         pw_input.send_keys(site_info["pw"])
 
         # 로그인 버튼 클릭
-        login_button = WebDriverWait(driver, 10).until( # Increased timeout to 10 seconds
+        login_button = WebDriverWait(driver, 1).until( # Increased timeout to 10 seconds
             EC.element_to_be_clickable((By.CSS_SELECTOR, site_info["login_button_selector"]))
         )
         login_button.click()
@@ -178,14 +187,14 @@ def navigate_to_order_details(driver, site_info, profile_name, collected_data):
 
 
 def extract_order_details(driver, site_info, profile_name):
-    """도매신 주문 상세 페이지에서 배송번호, 배송사, 받는 사람 이름 수집 + 아이디 정보 추가 (프로필 이름 추가)"""
+    """도매신 주문 상세 페이지에서 배송사, 배송정보, 받는 사람 이름 수집 + 아이디 정보 추가 (프로필 이름 추가)""" # 🚩 docstring 수정
     try:
         print(f"\n📦 [{profile_name}] 도매신 주문 상세 정보 수집 시작...")
 
         # 아이디
         user_id = site_info["id"]
 
-        # 배송번호
+        # 배송번호 (이제 배송정보에 포함될 것임)
         try:
             delivery_number_element = WebDriverWait(driver, 10).until( # Increased timeout to 10 seconds
                 EC.presence_of_element_located((By.CSS_SELECTOR, site_info["delivery_number_selector"]))
@@ -197,17 +206,18 @@ def extract_order_details(driver, site_info, profile_name):
         except:
             delivery_number = "정보 없음"
 
-        # 배송사와 배송정보 분리
+        # 배송사와 배송정보 분리 및 배송번호를 배송정보에 포함
         try:
             delivery_company_info = WebDriverWait(driver, 10).until( # Increased timeout to 10 seconds
                 EC.presence_of_element_located((By.CSS_SELECTOR, site_info["delivery_company_selector"]))
             ).text
             # 배송사와 배송정보 분리 (한진택배 458579242553에서 한진택배만 추출)
             delivery_company = delivery_company_info.split()[0]  # 첫 번째 단어(배송사)만 추출
-            delivery_info = " ".join(delivery_company_info.split()[1:])  # 나머지는 배송정보로 처리
+            delivery_info_base = " ".join(delivery_company_info.split()[1:])  # 나머지는 기본 배송정보
+            delivery_info = f"{delivery_info_base} (송장번호: {delivery_number})" if delivery_number != "정보 없음" else delivery_info_base # 🚩 배송정보에 배송번호 추가
         except:
             delivery_company = "정보 없음"
-            delivery_info = "정보 없음"
+            delivery_info = f"송장번호: {delivery_number}" if delivery_number != "정보 없음" else "정보 없음" # 🚩 배송정보에 배송번호 추가 (오류 처리)
 
         # 받는 사람 이름에서 '님'과 불필요한 정보를 제거
         try:
@@ -222,8 +232,8 @@ def extract_order_details(driver, site_info, profile_name):
         print("\n✅ [{profile_name}] 도매신 수집된 주문 상세 정보:")
         print(f"👤 [{profile_name}] 아이디: {user_id}") # 아이디 정보 추가 및 프로필 이름 추가
         print(f"🚚 [{profile_name}] 배송사: {delivery_company}")
-        print(f"📦 [{profile_name}] 배송정보: {delivery_info}")
-        print(f"🔢 [{profile_name}] 배송번호: {delivery_number}") # 배송번호 추가 출력
+        print(f"📦 [{profile_name}] 배송정보: {delivery_info}") # 배송정보에 배송번호 포함됨
+        # print(f"🔢 [{profile_name}] 배송번호: {delivery_number}") # 배송번호 제거
         print(f"👤 [{profile_name}] 받는 사람: {recipient_name}")
 
         # 🚩 수집된 정보를 딕셔너리 형태로 반환
@@ -231,8 +241,8 @@ def extract_order_details(driver, site_info, profile_name):
             "site_name": site_info["site_name"], # 🚩 공급사 이름 추가
             "아이디": user_id,
             "배송사": delivery_company,
-            "배송정보": delivery_info,
-            "배송번호": delivery_number, # 배송번호 추가
+            "배송정보": delivery_info, # 배송정보에 배송번호 포함됨
+            #"배송번호": delivery_number, # 배송번호 제거
             "받는 사람": recipient_name
         }
 
