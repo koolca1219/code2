@@ -1,0 +1,11 @@
+[
+  {
+    "site_name": "dmjb",
+    "login_url": "https://www.dzb.co.kr/member/login.php",
+    "id": "koolca121922",
+    "pw": "sjhs12jh19!@!(^^",
+    "id_selector": "#loginId",
+    "pw_selector": "#loginPwd",
+    "login_button_selector": "#formLogin > div.login > button"   
+  }
+]
